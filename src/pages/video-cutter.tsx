@@ -44,7 +44,9 @@ export default function VideoCutter() {
   const handleConvert = async (videoFile: File) => {
     if (!videoFile) return;
 
-    const fileName = videoFile.name;
+    const originalName = videoFile.name;
+    const nameSanitized = sanitizedFileName(originalName);
+    const outputFileName = `${nameSanitized.split(".")[0]}_cut.mp4`;
 
     try {
       setConverting(true);
@@ -52,20 +54,17 @@ export default function VideoCutter() {
 
       await ffmpeg.load();
 
-      ffmpeg.FS("writeFile", fileName, await fetchFile(videoFile));
+      ffmpeg.FS("writeFile", nameSanitized, await fetchFile(videoFile));
 
       ffmpeg.setProgress(({ ratio }) => {
         setProgress(Math.round(ratio * 100));
       });
 
-      const fileWithoutSpaces = sanitizedFileName(fileName);
-      const outputFileName = `${fileWithoutSpaces.split(".")[0]}_cut.mp4`;
-
       await ffmpeg.run(
         "-ss",
         convertToMinutes(startTime),
         "-i",
-        fileName,
+        nameSanitized,
         "-to",
         convertToMinutes(endTime),
         "-c",
@@ -77,7 +76,7 @@ export default function VideoCutter() {
 
       const videoBlob = new Blob([data.buffer], { type: "video/mp4" });
 
-      downloadFile(videoBlob, `${fileName.split(".")[0]}_cut.mp4`);
+      downloadFile(videoBlob, outputFileName);
 
       setConverted(true);
       setConverting(false);

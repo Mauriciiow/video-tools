@@ -1,3 +1,6 @@
 export const sanitizedFileName = (fileName: string) => {
-  return fileName.replace(/\s/g, "_");
+  return fileName
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9.]/g, "_");
 };

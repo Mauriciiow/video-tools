@@ -28,7 +28,9 @@ export default function VideoToAudio() {
   const handleConvert = async (videoFile: File) => {
     if (!videoFile) return;
 
-    const fileName = videoFile.name;
+    const originalName = videoFile.name;
+    const nameSanitized = sanitizedFileName(originalName);
+    const outputFileName = `${nameSanitized.split(".")[0]}.mp3`;
 
     try {
       setConverting(true);
@@ -36,18 +38,15 @@ export default function VideoToAudio() {
 
       await ffmpeg.load();
 
-      ffmpeg.FS("writeFile", fileName, await fetchFile(videoFile));
+      ffmpeg.FS("writeFile", nameSanitized, await fetchFile(videoFile));
 
       ffmpeg.setProgress(({ ratio }) => {
         setProgress(Math.round(ratio * 100));
       });
 
-      const fileWithoutSpaces = sanitizedFileName(fileName);
-      const outputFileName = `${fileWithoutSpaces.split(".")[0]}.mp3`;
-
       await ffmpeg.run(
         "-i",
-        fileName,
+        nameSanitized,
         "-vn",
         "-acodec",
         "libmp3lame",
