@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@layer base {
+  :root {
+    --radius: 0.5rem
+  }
+}
+
+body {
+  background: linear-gradient(to bottom right, #111827, #1f2937);
+  background: #1f2937;
+
+}
