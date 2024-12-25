@@ -6,6 +6,7 @@ import { CheckCircle, Music } from "lucide-react";
 import { createFFmpeg, fetchFile } from "@ffmpeg/ffmpeg";
 import { FileInput } from "@/components/file-input";
 import { downloadFile } from "@/utils/download";
+import { sanitizedFileName } from "@/utils/rename";
 
 export default function VideoToAudio() {
   const [file, setFile] = useState<File | null>(null);
@@ -41,20 +42,23 @@ export default function VideoToAudio() {
         setProgress(Math.round(ratio * 100));
       });
 
+      const fileWithoutSpaces = sanitizedFileName(fileName);
+      const outputFileName = `${fileWithoutSpaces.split(".")[0]}.mp3`;
+
       await ffmpeg.run(
         "-i",
         fileName,
         "-vn",
         "-acodec",
         "libmp3lame",
-        `${fileName.split(".")[0]}.mp3`
+        outputFileName
       );
 
-      const data = ffmpeg.FS("readFile", `${fileName.split(".")[0]}.mp3`);
+      const data = ffmpeg.FS("readFile", outputFileName);
 
       const audioBlob = new Blob([data.buffer], { type: "audio/mp3" });
 
-      downloadFile(audioBlob, `${fileName.split(".")[0]}.mp3`);
+      downloadFile(audioBlob, outputFileName);
 
       setConverted(true);
       setConverting(false);

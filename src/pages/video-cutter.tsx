@@ -8,6 +8,7 @@ import { createFFmpeg, fetchFile } from "@ffmpeg/ffmpeg";
 import { FileInput } from "@/components/file-input";
 import { convertToMinutes } from "@/utils/convert-minutes";
 import { downloadFile } from "@/utils/download";
+import { sanitizedFileName } from "@/utils/rename";
 
 export default function VideoCutter() {
   const [file, setFile] = useState<File | null>(null);
@@ -57,7 +58,8 @@ export default function VideoCutter() {
         setProgress(Math.round(ratio * 100));
       });
 
-      const outputFileName = `${fileName.split(".")[0]}_cut.mp4`;
+      const fileWithoutSpaces = sanitizedFileName(fileName);
+      const outputFileName = `${fileWithoutSpaces.split(".")[0]}_cut.mp4`;
 
       await ffmpeg.run(
         "-ss",
