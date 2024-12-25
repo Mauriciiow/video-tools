@@ -35,7 +35,7 @@ export function FileInput({
       {file ? (
         <div className="text-gray-300">
           <Video className="mx-auto h-16 w-16 mb-4" />
-          <p className="font-semibold max-w-40 truncate">{file.name}</p>
+          <p className="font-semibold max-w-[300px] truncate">{file.name}</p>
           <p className="text-sm opacity-70">{convertFileSize(file)}</p>
         </div>
       ) : (
