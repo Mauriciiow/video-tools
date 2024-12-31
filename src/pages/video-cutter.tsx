@@ -2,88 +2,82 @@ import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Slider } from "@/components/ui/slider";
+import { Input } from "@/components/ui/input";
 import { CheckCircle, Scissors } from "lucide-react";
-import { createFFmpeg, fetchFile } from "@ffmpeg/ffmpeg";
 import { FileInput } from "@/components/file-input";
-import { convertToMinutes } from "@/utils/convert-minutes";
+import { convertToSeconds, formatTime } from "@/utils/convert-minutes";
+import { useCutVideo } from "@/use-case/use-cut";
 import { downloadFile } from "@/utils/download";
 import { sanitizedFileName } from "@/utils/rename";
+import socket from "@/api/socket";
+import VideoTrimmer from "@/components/video-trimmer";
 
 export default function VideoCutter() {
   const [file, setFile] = useState<File | null>(null);
-  const [converting, setConverting] = useState(false);
-  const [progress, setProgress] = useState<number>(0);
-  const [converted, setConverted] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [videoDuration, setVideoDuration] = useState<number>(0);
   const [startTime, setStartTime] = useState<number>(0);
   const [endTime, setEndTime] = useState<number>(0);
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
+  const [progress, setProgress] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
 
-  const ffmpeg = createFFmpeg({ log: true });
+  const {
+    mutate: cutVideo,
+    isPending: isLoading,
+    data: cutVideoData,
+    isSuccess,
+  } = useCutVideo();
 
   useEffect(() => {
     if (file) {
       const videoUrl = URL.createObjectURL(file);
       setVideoPreviewUrl(videoUrl);
+      setStartTime(0);
+      setEndTime(0);
     }
   }, [file]);
+
+  useEffect(() => {
+    if (cutVideoData && file) {
+      downloadFile(
+        cutVideoData,
+        sanitizedFileName(file?.name as string, "mp4"),
+        "video/mp4"
+      );
+    }
+  }, [cutVideoData, file]);
+
+  useEffect(() => {
+    socket.on("progress", (progressPercent: number) => {
+      setProgress(progressPercent);
+    });
+
+    return () => {
+      socket.off("progress");
+    };
+  }, []);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       setFile(event.target.files[0]);
-      setConverted(false);
       setStartTime(0);
       setEndTime(0);
     }
   };
 
-  const handleConvert = async (videoFile: File) => {
-    if (!videoFile) return;
+  const handleConvert = async () => {
+    if (!file) return;
+    if (!startTime) return;
+    if (!endTime) return;
 
-    const originalName = videoFile.name;
-    const nameSanitized = sanitizedFileName(originalName);
-    const outputFileName = `${nameSanitized.split(".")[0]}_cut.mp4`;
+    const body = {
+      video: file as File,
+      startTime,
+      endTime,
+    };
 
-    try {
-      setConverting(true);
-      setProgress(0);
-
-      await ffmpeg.load();
-
-      ffmpeg.FS("writeFile", nameSanitized, await fetchFile(videoFile));
-
-      ffmpeg.setProgress(({ ratio }) => {
-        setProgress(Math.round(ratio * 100));
-      });
-
-      await ffmpeg.run(
-        "-ss",
-        convertToMinutes(startTime),
-        "-i",
-        nameSanitized,
-        "-to",
-        convertToMinutes(endTime),
-        "-c",
-        "copy",
-        outputFileName
-      );
-
-      const data = ffmpeg.FS("readFile", outputFileName);
-
-      const videoBlob = new Blob([data.buffer], { type: "video/mp4" });
-
-      downloadFile(videoBlob, outputFileName);
-
-      setConverted(true);
-      setConverting(false);
-    } catch (error) {
-      console.error("Erro durante o corte:", error);
-      setConverting(false);
-    }
+    cutVideo(body);
   };
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
@@ -101,14 +95,28 @@ export default function VideoCutter() {
 
     if (event.dataTransfer.files && event.dataTransfer.files[0]) {
       setFile(event.dataTransfer.files[0]);
-      setConverted(false);
     }
   };
 
-  const handleVideoLoad = () => {
-    if (videoRef.current) {
-      setVideoDuration(videoRef.current.duration);
-      setEndTime(videoRef.current.duration);
+  const handleVideoLoad = (duration: number) => {
+    setVideoDuration(duration);
+    setEndTime(duration);
+  };
+
+  const handleTimeChange = (start: number, end: number) => {
+    setStartTime(start);
+    setEndTime(Math.min(end, videoDuration));
+  };
+
+  const handleInputChange = (type: "start" | "end", value: string) => {
+    const seconds = convertToSeconds(value);
+
+    const clampedSeconds = Math.max(0, Math.min(seconds, videoDuration));
+
+    if (type === "start") {
+      setStartTime(Math.min(clampedSeconds, endTime));
+    } else {
+      setEndTime(Math.max(clampedSeconds, startTime));
     }
   };
 
@@ -118,7 +126,7 @@ export default function VideoCutter() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
+        className="w-full max-w-4xl"
       >
         <h1 className="text-4xl font-bold mb-8 text-center text-gray-300">
           Corte seu Vídeo
@@ -140,42 +148,56 @@ export default function VideoCutter() {
             />
             {videoPreviewUrl && (
               <div className="space-y-4">
-                <video
-                  ref={videoRef}
-                  src={videoPreviewUrl}
-                  className="w-full rounded-lg"
-                  controls
-                  onLoadedMetadata={handleVideoLoad}
+                <VideoTrimmer
+                  src={videoPreviewUrl || ""}
+                  onLoad={handleVideoLoad}
+                  onTimeChange={handleTimeChange}
+                  startTime={startTime}
+                  endTime={endTime}
                 />
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-300">Cortar vídeo:</p>
-                  <Slider
-                    min={0}
-                    max={videoDuration}
-                    step={0.1}
-                    value={[startTime, endTime]}
-                    onValueChange={(value) => {
-                      setStartTime(value[0]);
-                      setEndTime(value[1]);
-                    }}
-                  />
-                  <div className="flex justify-between text-sm text-gray-400">
-                    <span>{convertToMinutes(startTime)}</span>
-                    <span>{convertToMinutes(endTime)}</span>
+                <div className="flex space-x-4">
+                  <div className="flex-1">
+                    <label
+                      htmlFor="startTime"
+                      className="text-sm text-gray-300"
+                    >
+                      Início:
+                    </label>
+                    <Input
+                      id="startTime"
+                      type="text"
+                      value={formatTime(startTime)}
+                      onChange={(e) =>
+                        handleInputChange("start", e.target.value)
+                      }
+                      className="mt-1"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label htmlFor="endTime" className="text-sm text-gray-300">
+                      Fim:
+                    </label>
+                    <Input
+                      id="endTime"
+                      type="text"
+                      value={formatTime(endTime)}
+                      onChange={(e) => handleInputChange("end", e.target.value)}
+                      className="mt-1"
+                    />
                   </div>
                 </div>
               </div>
             )}
             <Button
-              onClick={() => handleConvert(file as File)}
-              disabled={!file || converting}
+              onClick={handleConvert}
+              disabled={!file || isLoading}
               className="w-full"
               variant="purpleGradient"
             >
-              {converting ? "Processando..." : "Cortar Vídeo"}
-              {!converting && <Scissors className="ml-2 h-5 w-5" />}
+              {isLoading ? "Processando..." : "Cortar Vídeo"}
+              {!isLoading && <Scissors className="ml-2 h-5 w-5" />}
             </Button>
-            {converting && (
+            {isLoading && (
               <div className="space-y-2">
                 <Progress
                   value={progress}
@@ -187,7 +209,7 @@ export default function VideoCutter() {
                 </p>
               </div>
             )}
-            {converted && (
+            {isSuccess && (
               <>
                 <motion.div
                   initial={{ opacity: 0, scale: 0.5 }}

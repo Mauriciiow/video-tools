@@ -1,70 +1,55 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle, Music } from "lucide-react";
-import { createFFmpeg, fetchFile } from "@ffmpeg/ffmpeg";
+import { useConvertVideoToAudio } from "@/use-case/use-convert";
 import { FileInput } from "@/components/file-input";
+import { CheckCircle, Music } from "lucide-react";
 import { downloadFile } from "@/utils/download";
 import { sanitizedFileName } from "@/utils/rename";
+import socket from "@/api/socket";
 
 export default function VideoToAudio() {
   const [file, setFile] = useState<File | null>(null);
-  const [converting, setConverting] = useState(false);
   const [progress, setProgress] = useState<number>(0);
-  const [converted, setConverted] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const {
+    mutate: videoToAudio,
+    isPending: isLoading,
+    data: audioData,
+    isSuccess,
+  } = useConvertVideoToAudio();
+
+  useEffect(() => {
+    if (audioData && file) {
+      downloadFile(
+        audioData,
+        sanitizedFileName(file?.name as string, "mp3"),
+        "audio/mpeg"
+      );
+    }
+  }, [audioData, file]);
+
+  useEffect(() => {
+    socket.on("progress", (progressPercent: number) => {
+      setProgress(progressPercent);
+    });
+    return () => {
+      socket.off("progress");
+    };
+  }, []);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       setFile(event.target.files[0]);
-      setConverted(false);
     }
   };
-  const ffmpeg = createFFmpeg({ log: true });
 
-  const handleConvert = async (videoFile: File) => {
-    if (!videoFile) return;
-
-    const originalName = videoFile.name;
-    const nameSanitized = sanitizedFileName(originalName);
-    const outputFileName = `${nameSanitized.split(".")[0]}.mp3`;
-
-    try {
-      setConverting(true);
-      setProgress(0);
-
-      await ffmpeg.load();
-
-      ffmpeg.FS("writeFile", nameSanitized, await fetchFile(videoFile));
-
-      ffmpeg.setProgress(({ ratio }) => {
-        setProgress(Math.round(ratio * 100));
-      });
-
-      await ffmpeg.run(
-        "-i",
-        nameSanitized,
-        "-vn",
-        "-acodec",
-        "libmp3lame",
-        outputFileName
-      );
-
-      const data = ffmpeg.FS("readFile", outputFileName);
-
-      const audioBlob = new Blob([data.buffer], { type: "audio/mp3" });
-
-      downloadFile(audioBlob, outputFileName);
-
-      setConverted(true);
-      setConverting(false);
-    } catch (error) {
-      console.error("Erro durante a conversão:", error);
-      setConverting(false);
-    }
+  const handleConvert = async () => {
+    if (!file) return;
+    videoToAudio(file);
   };
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
@@ -82,7 +67,6 @@ export default function VideoToAudio() {
 
     if (event.dataTransfer.files && event.dataTransfer.files[0]) {
       setFile(event.dataTransfer.files[0]);
-      setConverted(false);
     }
   };
 
@@ -113,15 +97,15 @@ export default function VideoToAudio() {
               fileInputRef={fileInputRef}
             />
             <Button
-              onClick={() => handleConvert(file as File)}
-              disabled={!file || converting}
+              onClick={handleConvert}
+              disabled={!file || isLoading}
               className="w-full"
               variant="purpleGradient"
             >
-              {converting ? "Convertendo..." : "Iniciar Conversão"}
-              {!converting && <Music className="ml-2 h-5 w-5" />}
+              {isLoading ? "Convertendo..." : "Iniciar Conversão"}
+              {!isLoading && <Music className="ml-2 h-5 w-5" />}
             </Button>
-            {converting && (
+            {isLoading && (
               <div className="space-y-2">
                 <Progress
                   value={progress}
@@ -133,7 +117,7 @@ export default function VideoToAudio() {
                 </p>
               </div>
             )}
-            {converted && (
+            {isSuccess && (
               <>
                 <motion.div
                   initial={{ opacity: 0, scale: 0.5 }}
