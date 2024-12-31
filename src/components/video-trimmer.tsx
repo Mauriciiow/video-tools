@@ -89,16 +89,23 @@ const VideoTrimmer: React.FC<VideoTrimmerProps> = ({
     }
   };
 
-  const handleTrimmerDrag = (_: React.MouseEvent, type: "start" | "end") => {
+  const handleTrimmerDrag = (
+    _: React.MouseEvent | React.TouchEvent,
+    type: "start" | "end"
+  ) => {
     setIsDragging(type);
   };
 
-  const handleMouseMove = (event: React.MouseEvent) => {
+  const handleMove = (event: React.MouseEvent | React.TouchEvent) => {
     if (!isDragging || !timelineRef.current) return;
 
     const timeline = timelineRef.current;
     const rect = timeline.getBoundingClientRect();
-    const x = event.clientX - rect.left;
+    const x =
+      "touches" in event
+        ? event.touches[0].clientX - rect.left
+        : event.clientX - rect.left;
+
     const newTime = (x / rect.width) * duration;
 
     if (isDragging === "start") {
@@ -111,6 +118,10 @@ const VideoTrimmer: React.FC<VideoTrimmerProps> = ({
   };
 
   const handleMouseUp = () => {
+    setIsDragging(null);
+  };
+
+  const handleEnd = () => {
     setIsDragging(null);
   };
 
@@ -153,9 +164,11 @@ const VideoTrimmer: React.FC<VideoTrimmerProps> = ({
         className={`relative h-24 bg-gray-700 rounded-lg overflow-hidden ${
           isLoadingFrames ? "cursor-wait" : "cursor-grab"
         }`}
-        onMouseMove={handleMouseMove}
+        onMouseMove={handleMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onTouchMove={handleMove}
+        onTouchEnd={handleEnd}
       >
         {isLoadingFrames ? (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
@@ -184,11 +197,13 @@ const VideoTrimmer: React.FC<VideoTrimmerProps> = ({
           className="absolute top-0 bottom-0 w-1 bg-white cursor-ew-resize"
           style={{ left: `calc(${(startTime / duration) * 100}% - 0.125rem)` }}
           onMouseDown={(e) => handleTrimmerDrag(e, "start")}
+          onTouchStart={(e) => handleTrimmerDrag(e, "start")}
         />
         <motion.div
           className="absolute top-0 bottom-0 w-1 bg-white cursor-ew-resize"
           style={{ left: `calc(${(endTime / duration) * 100}% - 0.125rem)` }}
           onMouseDown={(e) => handleTrimmerDrag(e, "end")}
+          onTouchStart={(e) => handleTrimmerDrag(e, "end")}
         />
       </div>
       <div className="flex justify-between text-sm text-gray-300">
