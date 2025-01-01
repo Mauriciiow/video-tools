@@ -63,12 +63,11 @@ export default function VideoCutter() {
 
   const handleConvert = async () => {
     if (!file) return;
-    if (!startTime) return;
     if (!endTime) return;
 
     const body = {
       video: file as File,
-      startTime,
+      startTime: startTime || 0,
       endTime,
     };
 
