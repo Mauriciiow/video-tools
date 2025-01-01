@@ -21,12 +21,7 @@ export default function VideoCutter() {
   const [progress, setProgress] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const {
-    mutate: cutVideo,
-    isPending: isLoading,
-    data: cutVideoData,
-    isSuccess,
-  } = useCutVideo();
+  const { mutate: cutVideo, isPending: isLoading, isSuccess } = useCutVideo();
 
   useEffect(() => {
     if (file) {
@@ -36,12 +31,6 @@ export default function VideoCutter() {
       setEndTime(0);
     }
   }, [file]);
-
-  useEffect(() => {
-    if (cutVideoData) {
-      downloadFile(cutVideoData);
-    }
-  }, [cutVideoData, file?.name]);
 
   useEffect(() => {
     socket.on("progress", (progressPercent: number) => {
@@ -71,7 +60,11 @@ export default function VideoCutter() {
       endTime,
     };
 
-    cutVideo(body);
+    cutVideo(body, {
+      onSuccess: (data) => {
+        downloadFile(data);
+      },
+    });
   };
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {

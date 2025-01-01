@@ -16,15 +16,8 @@ export default function VideoToAudio() {
   const {
     mutate: videoToAudio,
     isPending: isLoading,
-    data: audioData,
     isSuccess,
   } = useConvertVideoToAudio();
-
-  useEffect(() => {
-    if (audioData) {
-      downloadFile(audioData);
-    }
-  }, [audioData, file?.name]);
 
   useEffect(() => {
     socket.on("progress", (progressPercent: number) => {
@@ -45,7 +38,11 @@ export default function VideoToAudio() {
 
   const handleConvert = async () => {
     if (!file) return;
-    videoToAudio(file);
+    videoToAudio(file, {
+      onSuccess: (data) => {
+        downloadFile(data);
+      },
+    });
   };
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
