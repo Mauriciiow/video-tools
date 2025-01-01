@@ -60,7 +60,7 @@ export default function MusicRecognition() {
   };
 
   const recognizeMusic = async () => {
-    if (!audioBlob) return;
+    if (!audioBlob || isRecognizing) return;
 
     getMusicDetails(audioBlob);
   };
@@ -114,7 +114,7 @@ export default function MusicRecognition() {
             {audioBlob && !isRecording && (
               <Button
                 onClick={recognizeMusic}
-                disabled={isRecognizing}
+                disabled={isRecognizing || !audioBlob}
                 className="w-full"
                 variant="greenGradient"
               >
