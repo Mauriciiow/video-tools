@@ -6,7 +6,7 @@ import { useConvertVideoToAudio } from "@/use-case/use-convert";
 import { FileInput } from "@/components/file-input";
 import { CheckCircle, Music } from "lucide-react";
 import { downloadFile } from "@/utils/download";
-import { sanitizedFileName } from "@/utils/rename";
+
 import socket from "@/api/socket";
 
 export default function VideoToAudio() {
@@ -21,14 +21,10 @@ export default function VideoToAudio() {
   } = useConvertVideoToAudio();
 
   useEffect(() => {
-    if (audioData && file) {
-      downloadFile(
-        audioData,
-        sanitizedFileName(file?.name as string, "mp3"),
-        "audio/mpeg"
-      );
+    if (audioData) {
+      downloadFile(audioData);
     }
-  }, [audioData, file]);
+  }, [audioData, file?.name]);
 
   useEffect(() => {
     socket.on("progress", (progressPercent: number) => {

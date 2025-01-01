@@ -8,7 +8,6 @@ import { FileInput } from "@/components/file-input";
 import { convertToSeconds, formatTime } from "@/utils/convert-minutes";
 import { useCutVideo } from "@/use-case/use-cut";
 import { downloadFile } from "@/utils/download";
-import { sanitizedFileName } from "@/utils/rename";
 import socket from "@/api/socket";
 import VideoTrimmer from "@/components/video-trimmer";
 
@@ -39,14 +38,10 @@ export default function VideoCutter() {
   }, [file]);
 
   useEffect(() => {
-    if (cutVideoData && file) {
-      downloadFile(
-        cutVideoData,
-        sanitizedFileName(file?.name as string, "mp4"),
-        "video/mp4"
-      );
+    if (cutVideoData) {
+      downloadFile(cutVideoData);
     }
-  }, [cutVideoData, file]);
+  }, [cutVideoData, file?.name]);
 
   useEffect(() => {
     socket.on("progress", (progressPercent: number) => {
