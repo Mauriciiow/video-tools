@@ -65,8 +65,6 @@ export default function MusicRecognition() {
     getMusicDetails(audioBlob);
   };
 
-  console.log(recognitionResult);
-
   return (
     <div className="flex items-center justify-center p-4">
       <motion.div
@@ -116,7 +114,7 @@ export default function MusicRecognition() {
             {audioBlob && !isRecording && (
               <Button
                 onClick={recognizeMusic}
-                disabled={isRecognizing || !!recognitionResult}
+                disabled={isRecognizing}
                 className="w-full"
                 variant="greenGradient"
               >
