@@ -24,6 +24,8 @@ const buttonVariants = cva(
           "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-3 rounded-full transition duration-300 transform hover:scale-105",
         greenGradient:
           "bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white font-bold py-3 rounded-full transition duration-300 transform hover:scale-105",
+        blueGradient:
+          "bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-bold py-3 rounded-full transition duration-300 transform hover:scale-105",
       },
       size: {
         default: "h-10 px-4 py-2",

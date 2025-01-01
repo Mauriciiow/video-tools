@@ -4,11 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Music, Scissors, ArrowLeft } from "lucide-react";
 import VideoToAudio from "./pages/video-to-audio";
 import VideoCutter from "./pages/video-cutter";
-
+import MusicRecognition from "./pages/music-recognition";
 export default function Home() {
-  const [selectedTool, setSelectedTool] = useState<"convert" | "cut" | null>(
-    null
-  );
+  const [selectedTool, setSelectedTool] = useState<
+    "convert" | "cut" | "recognize" | null
+  >(null);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center p-4">
@@ -44,12 +44,21 @@ export default function Home() {
                 Cortar Vídeo
                 <Scissors className="ml-2 h-5 w-5" />
               </Button>
+              <Button
+                onClick={() => setSelectedTool("recognize")}
+                className="w-full"
+                variant="blueGradient"
+              >
+                Reconhecer Música
+                <Music className="ml-2 h-5 w-5" />
+              </Button>
             </div>
           </motion.div>
         ) : (
           <>
             {selectedTool === "convert" && <VideoToAudio />}
             {selectedTool === "cut" && <VideoCutter />}
+            {selectedTool === "recognize" && <MusicRecognition />}
             <Button
               onClick={() => setSelectedTool(null)}
               className="mt-4 w-full text-white gap-2"
