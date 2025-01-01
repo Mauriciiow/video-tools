@@ -208,7 +208,7 @@ const VideoTrimmer: React.FC<VideoTrimmerProps> = ({
           }}
         />
         <motion.div
-          className={`absolute top-0 bottom-0 w-1 bg-white ${
+          className={`absolute top-0 bottom-0 w-1 bg-white select-none ${
             videoState.isDragging === "start" ? "bg-blue-500" : ""
           } cursor-ew-resize`}
           style={{
@@ -226,7 +226,7 @@ const VideoTrimmer: React.FC<VideoTrimmerProps> = ({
           </div>
         </motion.div>
         <motion.div
-          className={`absolute top-0 bottom-0 w-1 bg-white ${
+          className={`absolute top-0 bottom-0 w-1 bg-white select-none${
             videoState.isDragging === "end" ? "bg-blue-500" : ""
           } cursor-ew-resize`}
           style={{
