@@ -96,9 +96,17 @@ export default function VideoCutter() {
   };
 
   const handleInputChange = (type: "start" | "end", value: string) => {
-    const seconds = convertToSeconds(value);
+    const formattedValue = value.replace(/[^\d]/g, "");
 
-    const clampedSeconds = Math.max(0, Math.min(seconds, videoDuration));
+    const hours = formattedValue.slice(0, -4).padStart(2, "0");
+    const minutes = formattedValue.slice(-4, -2).padStart(2, "0");
+    const seconds = formattedValue.slice(-2).padStart(2, "0");
+
+    const formattedTime = `${hours}:${minutes}:${seconds}`;
+
+    const totalSeconds = convertToSeconds(formattedTime);
+
+    const clampedSeconds = Math.max(0, Math.min(totalSeconds, videoDuration));
 
     if (type === "start") {
       setStartTime(Math.min(clampedSeconds, endTime));
