@@ -3,7 +3,7 @@ import { convertFileSize } from "@/utils/convert-file";
 import { Video, Upload, Image } from "lucide-react";
 
 interface FileInputProps {
-  file: File | null;
+  file: File | File[] | null;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   isDragging: boolean;
   onDragOver: (event: React.DragEvent<HTMLDivElement>) => void;
@@ -12,6 +12,7 @@ interface FileInputProps {
   fileInputRef: React.RefObject<HTMLInputElement>;
   acceptedFileTypes: string;
   fileIcon?: "video" | "image";
+  multiple?: boolean;
 }
 
 export function FileInput({
@@ -24,8 +25,36 @@ export function FileInput({
   fileInputRef,
   acceptedFileTypes,
   fileIcon,
+  multiple,
 }: FileInputProps) {
   const FileIcon = fileIcon === "image" ? Image : Video;
+  const renderFiles = () => {
+    if (!file) return null;
+
+    if (Array.isArray(file)) {
+      return (
+        <div className="space-y-2">
+          {file.map((f, index) => (
+            <div
+              key={index}
+              className="flex items-center justify-between text-gray-300"
+            >
+              <span className="truncate max-w-[200px]">{f.name}</span>
+              <span className="text-sm opacity-70">{convertFileSize(f)}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    return (
+      <div className="text-gray-300">
+        <FileIcon className="mx-auto h-16 w-16 mb-4" />
+        <p className="font-semibold max-w-[300px] truncate">{file.name}</p>
+        <p className="text-sm opacity-70">{convertFileSize(file)}</p>
+      </div>
+    );
+  };
 
   return (
     <div
@@ -38,12 +67,8 @@ export function FileInput({
         isDragging && "border-purple-500 bg-gray-700 bg-opacity-50"
       )}
     >
-      {file ? (
-        <div className="text-gray-300">
-          <FileIcon className="mx-auto h-16 w-16 mb-4" />
-          <p className="font-semibold max-w-[300px] truncate">{file.name}</p>
-          <p className="text-sm opacity-70">{convertFileSize(file)}</p>
-        </div>
+      {file && Array.isArray(file) && file.length > 0 ? (
+        renderFiles()
       ) : (
         <div className="text-gray-300">
           <Upload className="mx-auto h-16 w-16 mb-4" />
@@ -57,6 +82,7 @@ export function FileInput({
         accept={acceptedFileTypes}
         onChange={onChange}
         className="hidden"
+        multiple={multiple}
       />
     </div>
   );
