@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { convertFileSize } from "@/utils/convert-file";
-import { Video, Upload } from "lucide-react";
+import { Video, Upload, Image } from "lucide-react";
 
 interface FileInputProps {
   file: File | null;
@@ -10,6 +10,8 @@ interface FileInputProps {
   onDragLeave: (event: React.DragEvent<HTMLDivElement>) => void;
   onDrop: (event: React.DragEvent<HTMLDivElement>) => void;
   fileInputRef: React.RefObject<HTMLInputElement>;
+  acceptedFileTypes: string;
+  fileIcon?: "video" | "image";
 }
 
 export function FileInput({
@@ -20,7 +22,11 @@ export function FileInput({
   onDragLeave,
   onDrop,
   fileInputRef,
+  acceptedFileTypes,
+  fileIcon,
 }: FileInputProps) {
+  const FileIcon = fileIcon === "image" ? Image : Video;
+
   return (
     <div
       onClick={() => fileInputRef.current?.click()}
@@ -34,21 +40,21 @@ export function FileInput({
     >
       {file ? (
         <div className="text-gray-300">
-          <Video className="mx-auto h-16 w-16 mb-4" />
+          <FileIcon className="mx-auto h-16 w-16 mb-4" />
           <p className="font-semibold max-w-[300px] truncate">{file.name}</p>
           <p className="text-sm opacity-70">{convertFileSize(file)}</p>
         </div>
       ) : (
         <div className="text-gray-300">
           <Upload className="mx-auto h-16 w-16 mb-4" />
-          <p className="font-semibold">Arraste seu vídeo aqui</p>
+          <p className="font-semibold">Arraste seu arquivo aqui</p>
           <p className="text-sm opacity-70">ou clique para selecionar</p>
         </div>
       )}
       <input
         ref={fileInputRef}
         type="file"
-        accept="video/*"
+        accept={acceptedFileTypes}
         onChange={onChange}
         className="hidden"
       />

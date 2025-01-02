@@ -140,6 +140,7 @@ export default function VideoCutter() {
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               fileInputRef={fileInputRef}
+              acceptedFileTypes="video/*"
             />
             {videoPreviewUrl && (
               <div className="space-y-4">

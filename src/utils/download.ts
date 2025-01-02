@@ -17,3 +17,14 @@ export const downloadFile = async (file: ConvertSchemaResponse) => {
     return;
   }
 };
+
+export const downloadPdf = async (file: Uint8Array, fileName: string) => {
+  const blob = new Blob([file], { type: "application/pdf" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+};

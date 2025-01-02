@@ -88,6 +88,7 @@ export default function VideoToAudio() {
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               fileInputRef={fileInputRef}
+              acceptedFileTypes="video/*"
             />
             <Button
               onClick={handleConvert}
